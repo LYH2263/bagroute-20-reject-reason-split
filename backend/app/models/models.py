@@ -54,5 +54,7 @@ class RejectRecord(Base):
     route_id: Mapped[int] = mapped_column(ForeignKey("delivery_routes.id"))
     stop_id: Mapped[int] = mapped_column(Integer)
     stop_name: Mapped[str] = mapped_column(String(80))
+    # 拒收分档：weight_only / volume_only / weight_and_volume
+    category: Mapped[str] = mapped_column(String(32), index=True)
     reason: Mapped[str] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

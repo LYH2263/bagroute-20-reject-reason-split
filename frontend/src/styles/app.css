@@ -229,6 +229,31 @@ button {
 }
 .mono { font-family: "IBM Plex Mono", monospace; }
 .err { color: #ff9b7a; } .ok { color: #b6e356; }
+.hint { color: var(--route-muted); font-size: .82rem; }
+
+.rej-tag {
+  display: inline-block;
+  padding: .15rem .55rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.rej-tag--weight_only {
+  background: rgba(217, 108, 74, .18);
+  color: #ff9b7a;
+  border: 1px solid rgba(217, 108, 74, .55);
+}
+.rej-tag--volume_only {
+  background: rgba(126, 200, 232, .14);
+  color: #7ec8e8;
+  border: 1px solid rgba(126, 200, 232, .5);
+}
+.rej-tag--weight_and_volume {
+  background: #d96c4a;
+  color: #1a0d08;
+  border: 1px solid #ff9b7a;
+}
 
 /* page helpers — no card-grid dashboard */
 .route-strip {

@@ -42,6 +42,7 @@ class RejectOut(BaseModel):
     route_id: int
     stop_id: int
     stop_name: str
+    category: str
     reason: str
     created_at: datetime
     model_config = {"from_attributes": True}
