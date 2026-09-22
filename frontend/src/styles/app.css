@@ -250,3 +250,17 @@ button {
 }
 .fill { height: 10px; background: #2a3824; border-radius: 2px; overflow: hidden; }
 .fill > span { display: block; height: 100%; background: var(--accent); }
+
+/* reject category badges — three tiers must not read as the same vague state */
+.rej-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: .15rem .55rem;
+  font-size: .74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.rej-badge--weight_only { background: #3a2f16; color: #ffc36a; border: 1px solid #8a6a2a; }
+.rej-badge--volume_only { background: #172e3a; color: #7ec8e8; border: 1px solid #2f6a8a; }
+.rej-badge--weight_volume { background: #3a1c14; color: #ff9b7a; border: 1px solid #a04a30; }
+.rej-badge--none { background: #1c261a; color: var(--route-muted); border: 1px solid var(--line); }

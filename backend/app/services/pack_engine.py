@@ -3,6 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
+
+
+class RejectCategory(str, Enum):
+    WEIGHT_ONLY = "weight_only"          # 仅超重
+    VOLUME_ONLY = "volume_only"          # 仅超体积
+    WEIGHT_AND_VOLUME = "weight_volume"  # 同时超重超体积
 
 
 @dataclass(frozen=True)
@@ -23,15 +30,50 @@ class Bag:
 
 
 @dataclass(frozen=True)
+class Reject:
+    item: StopItem
+    reason: str
+    category: RejectCategory | None
+
+
+@dataclass(frozen=True)
 class PackResult:
     bags: list[Bag]
-    rejects: list[tuple[StopItem, str]]
+    rejects: list[Reject]
 
 
 def can_fit(bag: Bag, item: StopItem, max_weight: float, max_volume: float) -> bool:
     return (
         bag.weight_kg + item.weight_kg <= max_weight + 1e-9
         and bag.volume_l + item.volume_l <= max_volume + 1e-9
+    )
+
+
+def classify_reject(
+    item: StopItem, max_weight: float, max_volume: float
+) -> RejectCategory | None:
+    """Return the reject category, or None when the item is within both caps."""
+    over_weight = item.weight_kg > max_weight
+    over_volume = item.volume_l > max_volume
+    if over_weight and over_volume:
+        return RejectCategory.WEIGHT_AND_VOLUME
+    if over_weight:
+        return RejectCategory.WEIGHT_ONLY
+    if over_volume:
+        return RejectCategory.VOLUME_ONLY
+    return None
+
+
+def reject_reason(
+    item: StopItem, category: RejectCategory, max_weight: float, max_volume: float
+) -> str:
+    if category is RejectCategory.WEIGHT_ONLY:
+        return f"仅超重：{item.weight_kg}kg > 限重 {max_weight}kg"
+    if category is RejectCategory.VOLUME_ONLY:
+        return f"仅超体积：{item.volume_l}L > 限体积 {max_volume}L"
+    return (
+        f"同时超重超体积：{item.weight_kg}kg > 限重 {max_weight}kg；"
+        f"{item.volume_l}L > 限体积 {max_volume}L"
     )
 
 
@@ -42,17 +84,15 @@ def pack_route(
 ) -> PackResult:
     ordered = sorted(stops, key=lambda s: s.seq)
     bags: list[Bag] = []
-    rejects: list[tuple[StopItem, str]] = []
+    rejects: list[Reject] = []
     current: Bag | None = None
 
     for item in ordered:
-        if item.weight_kg > max_weight or item.volume_l > max_volume:
-            reason = []
-            if item.weight_kg > max_weight:
-                reason.append(f"超重 {item.weight_kg}>{max_weight}")
-            if item.volume_l > max_volume:
-                reason.append(f"超体积 {item.volume_l}>{max_volume}")
-            rejects.append((item, "；".join(reason)))
+        category = classify_reject(item, max_weight, max_volume)
+        if category is not None:
+            rejects.append(
+                Reject(item, reject_reason(item, category, max_weight, max_volume), category)
+            )
             continue
 
         if current is None or not can_fit(current, item, max_weight, max_volume):
@@ -60,8 +100,8 @@ def pack_route(
             bags.append(current)
 
         if not can_fit(current, item, max_weight, max_volume):
-            # should not happen after single-item check, but keep safe
-            rejects.append((item, "无法装入新袋"))
+            # defensive: unreachable for an item within single-item caps
+            rejects.append(Reject(item, "无法装入新袋", None))
             continue
 
         current.items.append(item)

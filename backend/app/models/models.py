@@ -55,4 +55,6 @@ class RejectRecord(Base):
     stop_id: Mapped[int] = mapped_column(Integer)
     stop_name: Mapped[str] = mapped_column(String(80))
     reason: Mapped[str] = mapped_column(String(200))
+    # 拒收分档：weight_only / volume_only / weight_volume
+    category: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

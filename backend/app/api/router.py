@@ -13,9 +13,11 @@ from app.schemas.schemas import (
     StopOut,
     WeightOut,
 )
-from app.services.pack_engine import StopItem, pack_route
+from app.services.pack_engine import RejectCategory, StopItem, pack_route
 
 api_router = APIRouter()
+
+REJECT_CATEGORIES = {c.value for c in RejectCategory}
 
 
 @api_router.get("/health")
@@ -80,13 +82,14 @@ def pack(body: PackRequest, db: Session = Depends(get_db)):
                 )
             )
         out_bags.append(row)
-    for stop, reason in result.rejects:
+    for rej in result.rejects:
         db.add(
             RejectRecord(
                 route_id=route.id,
-                stop_id=stop.stop_id,
-                stop_name=stop.label,
-                reason=reason,
+                stop_id=rej.item.stop_id,
+                stop_name=rej.item.label,
+                reason=rej.reason,
+                category=rej.category.value if rej.category else None,
             )
         )
     db.commit()
@@ -139,8 +142,16 @@ def bags(db: Session = Depends(get_db)):
 
 
 @api_router.get("/rejects", response_model=list[RejectOut])
-def rejects(db: Session = Depends(get_db)):
-    return db.scalars(select(RejectRecord).order_by(RejectRecord.id.desc())).all()
+def rejects(category: str | None = None, db: Session = Depends(get_db)):
+    q = select(RejectRecord).order_by(RejectRecord.id.desc())
+    if category is not None:
+        if category not in REJECT_CATEGORIES:
+            raise HTTPException(
+                400,
+                f"非法分档 {category!r}，可选：{', '.join(sorted(REJECT_CATEGORIES))}",
+            )
+        q = q.where(RejectRecord.category == category)
+    return db.scalars(q).all()
 
 
 @api_router.get("/weights", response_model=list[WeightOut])
